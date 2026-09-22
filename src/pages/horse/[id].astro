@@ -1,0 +1,248 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import HorseForm from "../../components/HorseForm.astro";
+import Database from "better-sqlite3";
+import path from "node:path";
+import { dbFolder, getSelectedDb } from "../../lib/database";
+
+const { isLoggedIn } = Astro.locals;
+const id = Number(Astro.params.id);
+
+const selectedDb = getSelectedDb(Astro.cookies.get("selectedDb")?.value);
+const db = new Database(path.join(dbFolder, selectedDb), { readonly: true });
+
+const horse = Number.isInteger(id)
+    ? (db.prepare("SELECT * FROM Horse WHERE id = ?").get(id) as any)
+    : undefined;
+
+let sire: any;
+let dam: any;
+let breed: any;
+let stable: any;
+let owner: any;
+let allHorses: { id: number; name: string; gender: number }[] = [];
+
+if (horse) {
+    sire = horse.sire_id ? db.prepare("SELECT id, name FROM Horse WHERE id = ?").get(horse.sire_id) : undefined;
+    dam = horse.dam_id ? db.prepare("SELECT id, name FROM Horse WHERE id = ?").get(horse.dam_id) : undefined;
+    breed = db.prepare("SELECT name FROM Breed WHERE id = ?").get(horse.breed_id);
+    stable = db.prepare("SELECT name FROM Stable WHERE id = ?").get(horse.stable_id);
+    owner = db.prepare("SELECT name FROM User WHERE id = ?").get(horse.owner_id);
+    allHorses = db.prepare("SELECT id, name, gender FROM Horse").all() as any[];
+}
+
+db.close();
+
+const genderSymbols: Record<number, string> = { 0: "♀", 1: "♂", 2: "⚲" };
+const genderSymbol = horse ? genderSymbols[horse.gender] ?? "?" : "";
+const deathDateValue = horse && horse.death_date === "00/00/0000" ? "Not Dead" : horse?.death_date;
+---
+
+<BaseLayout>
+    <div class="horse-detail">
+        <a href="/horseviewer" class="back-link">← Back to Horse Viewer</a>
+
+        {horse ? (
+            <>
+                <section class="horse-view" data-horse-id={horse.id}>
+                    <div class="horse-main">
+                        <h1>{horse.name}{genderSymbol}</h1>
+                        <div class="category">
+                            Birth Date: {horse.birth_date} <br>
+                            Death Date: {deathDateValue}
+                        </div>
+                        <textarea readonly>{horse.notes}</textarea>
+                        <div class="category">
+                            Base Speed: {horse.speed} <br>
+                            Base Jump Height: {horse.jump_height} <br>
+                            Base Heart Amount: {horse.heart_amount}
+                        </div>
+                        <div class="category">
+                            Breed: {breed?.name ?? "Undefined Breed"} <br>
+                            Stable: {stable?.name ?? "No Stable"} <br>
+                            Owner: {owner?.name ?? "No Owner"}
+                        </div>
+                        <div class="category">
+                            Sire: {sire ? <a href={`/horse/${sire.id}`}>{sire.name}</a> : "Unknown"} <br>
+                            Dam: {dam ? <a href={`/horse/${dam.id}`}>{dam.name}</a> : "Unknown"}
+                        </div>
+                    </div>
+                    <div class="horse-actions">
+                        <a href={`/pedigree?id=${horse.id}`} class="pedigree-link">View Pedigree</a>
+                        {isLoggedIn && (
+                            <>
+                                <button type="button" id="edit-horse-btn">Edit</button>
+                                <button type="button" id="delete-horse-btn">Delete</button>
+                            </>
+                        )}
+                    </div>
+                </section>
+
+                {isLoggedIn && (
+                    <div class="horse-edit" id="horse-edit-panel" hidden>
+                        <HorseForm
+                            mode="edit"
+                            horse={{
+                                id: horse.id, name: horse.name, gender: horse.gender,
+                                birth_date: horse.birth_date, death_date: horse.death_date,
+                                notes: horse.notes, speed: horse.speed, jump_height: horse.jump_height,
+                                heart_amount: horse.heart_amount, sire_id: horse.sire_id, dam_id: horse.dam_id,
+                                breed_id: horse.breed_id, stable_id: horse.stable_id, owner_id: horse.owner_id,
+                            }}
+                            horses={allHorses}
+                        />
+                    </div>
+                )}
+            </>
+        ) : (
+            <h1>Horse not found</h1>
+        )}
+    </div>
+
+    <script>
+        import { actions } from "astro:actions";
+        import { bindOnce } from "../../lib/dom";
+
+        document.addEventListener("astro:page-load", () => {
+            const view = document.querySelector(".horse-view") as HTMLElement | null;
+            const editPanel = document.getElementById("horse-edit-panel");
+
+            document.getElementById("edit-horse-btn")?.addEventListener("click", () => {
+                view?.setAttribute("hidden", "");
+                editPanel?.removeAttribute("hidden");
+            });
+
+            editPanel?.querySelector(".cancel-horse-form")?.addEventListener("click", () => {
+                editPanel.setAttribute("hidden", "");
+                view?.removeAttribute("hidden");
+            });
+
+            document.getElementById("delete-horse-btn")?.addEventListener("click", async () => {
+                const horseId = view?.dataset.horseId;
+                if (!horseId) return;
+                if (!confirm("Delete this horse? This cannot be undone.")) return;
+
+                const formData = new FormData();
+                formData.set("id", horseId);
+                const { error } = await actions.horse.remove(formData);
+
+                if (error) {
+                    alert(error.message);
+                    return;
+                }
+                window.location.href = "/horseviewer";
+            });
+
+            bindOnce(editPanel, "editFormBound", "submit", async (e: Event) => {
+                e.preventDefault();
+                const form = e.target as HTMLFormElement;
+                const formData = new FormData(form);
+                const errorEl = form.querySelector(".form-error") as HTMLElement | null;
+
+                const { error } = await actions.horse.update(formData);
+
+                if (error) {
+                    if (errorEl) {
+                        errorEl.textContent = error.message;
+                        errorEl.hidden = false;
+                    }
+                    return;
+                }
+                window.location.reload();
+            });
+        });
+    </script>
+</BaseLayout>
+
+<style>
+    .horse-detail {
+        margin: 20px auto;
+        max-width: 700px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .back-link {
+        align-self: flex-start;
+    }
+
+    .horse-view {
+        background-color: rgb(56, 73, 56);
+        border-radius: 5px;
+        padding: 15px;
+        color: aliceblue;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        text-align: left;
+    }
+
+    .horse-view[hidden] {
+        display: none;
+    }
+
+    .horse-main h1 {
+        margin: 0;
+        font-size: 32px;
+    }
+
+    .category {
+        background-color: rgb(69, 77, 69);
+        padding: 8px 12px;
+        border-radius: 4px;
+    }
+
+    .category a {
+        color: rgb(152, 206, 208);
+        padding: 0;
+        margin: 0;
+        outline: none;
+        font-weight: normal;
+    }
+
+    textarea {
+        resize: none;
+        background-color: rgb(69, 77, 69);
+        border-width: 0px;
+        color: aliceblue;
+        height: 100px;
+        width: 100%;
+        box-sizing: border-box;
+        font-family: inherit;
+    }
+
+    .horse-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .horse-actions button,
+    .pedigree-link {
+        background-color: rgb(69, 77, 69);
+        border: none;
+        color: aliceblue;
+        padding: 8px 14px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: medium;
+        margin: 0;
+        outline: none;
+    }
+
+    .horse-actions button:hover,
+    .pedigree-link:hover {
+        background-color: rgb(87, 96, 87);
+    }
+
+    #delete-horse-btn {
+        color: rgb(224, 128, 128);
+    }
+
+    .horse-edit {
+        background-color: rgb(69, 77, 69);
+        border-radius: 5px;
+        padding: 15px;
+    }
+</style>

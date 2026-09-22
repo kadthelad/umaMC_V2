@@ -1,0 +1,244 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro"
+import "../styles/world.css";
+import "../styles/horseviewer.css"
+import Database from "better-sqlite3";
+import path from "node:path";
+import { dbFolder, getSelectedDb } from "../lib/database";
+import HorseForm from "../components/HorseForm.astro";
+
+const { isLoggedIn } = Astro.locals;
+
+const selectedDb = getSelectedDb(Astro.cookies.get("selectedDb")?.value);
+const db = new Database(path.join(dbFolder, selectedDb), { readonly: true });
+
+const horse_table = db.prepare("SELECT * FROM Horse;").all() as any[];
+const breed_table = db.prepare("SELECT * FROM Breed;").all() as any[];
+const stable_table = db.prepare("SELECT * FROM Stable;").all() as any[];
+const user_table = db.prepare("SELECT * FROM User;").all() as any[];
+db.close();
+
+const allHorses = horse_table.map((t) => ({ id: t.id, name: t.name, gender: t.gender }));
+const horseNamesById = new Map(horse_table.map((t) => [t.id, t.name]));
+
+const genderSymbols: Record<number, string> = { 0: "♀", 1: "♂", 2: "⚲" };
+---
+
+<BaseLayout>
+	<div class="database">
+        <div class="filter">
+            <button id="filter_button">Filters</button>
+            <div id="filter_menu">
+                <div class="filter_divider">
+                    <div>
+                        <label for="hname">Horse Name: </label>
+                        <input type="text" id="hname" name="hname" placeholder="Horse Name">
+                    </div>
+                    <div>
+                        <label for="hgender">Gender: </label>
+                        <select id="hgender" class="filter-select">
+                            <option value="ALL" selected>ALL</option>
+                            <option value="1">Stallion ♂</option>
+                            <option value="0">Mare ♀</option>
+                            <option value="2">Gelding ⚲</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="halive">Alive only: </label>
+                        <input type="checkbox" id="halive" name="halive" checked>
+                    </div>
+                    <div>
+                        <label for="hbreed">Breed: </label>
+                        <select id="hbreed" class="filter-select">
+                            <option value="ALL" selected>ALL</option>
+                            {breed_table.map((b: any) => <option value={b.id}>{b.name}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="hstable">Stable: </label>
+                        <select id="hstable" class="filter-select">
+                            <option value="ALL" selected>ALL</option>
+                            {stable_table.map((s: any) => <option value={s.id}>{s.name}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="howner">Owner: </label>
+                        <select id="howner" class="filter-select">
+                            <option value="ALL" selected>ALL</option>
+                            {user_table.map((u: any) => <option value={u.id}>{u.name}</option>)}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {isLoggedIn && (
+            <div class="add-horse">
+                <button id="add_horse_button">+ Add Horse</button>
+                <div id="add_horse_panel">
+                    <HorseForm mode="create" horses={allHorses} />
+                </div>
+            </div>
+        )}
+        <ul class="item-list horse-list">
+            { horse_table.length > 0 ?
+                horse_table.map((t: any) => (
+                    <li
+                        class="item-row horse-row"
+                        data-name={t.name.toLowerCase()}
+                        data-gender={t.gender}
+                        data-alive={t.death_date === "00/00/0000" ? "1" : "0"}
+                        data-breed={t.breed_id ?? ""}
+                        data-stable={t.stable_id ?? ""}
+                        data-owner={t.owner_id ?? ""}
+                    >
+                        <div class="horse-row-main">
+                            <a href={`/horse/${t.id}`} class="horse-name-link">{t.name}{genderSymbols[t.gender] ?? ""}</a>
+                            <span class="horse-parent">
+                                Sire: {t.sire_id ? <a href={`/horse/${t.sire_id}`}>{horseNamesById.get(t.sire_id) ?? "Unknown"}</a> : "Unknown"}
+                            </span>
+                            <span class="horse-parent">
+                                Dam: {t.dam_id ? <a href={`/horse/${t.dam_id}`}>{horseNamesById.get(t.dam_id) ?? "Unknown"}</a> : "Unknown"}
+                            </span>
+                        </div>
+                        <a href={`/pedigree?id=${t.id}`} class="pedigree-btn">Pedigree</a>
+                    </li>
+                ))
+                : (
+                    <li class="empty-state">Empty Database</li>
+                )
+            }
+        </ul>
+	</div>
+    <script>
+        import { actions } from "astro:actions";
+        import { bindOnce } from "../lib/dom";
+
+        document.addEventListener("astro:page-load", () => {
+            const filterButton = document.getElementById("filter_button");
+            const filterMenu = document.getElementById("filter_menu");
+
+            filterButton?.addEventListener("click", () => {
+                filterMenu?.classList.toggle("open");
+            });
+
+            const addHorseButton = document.getElementById("add_horse_button");
+            const addHorsePanel = document.getElementById("add_horse_panel");
+
+            addHorseButton?.addEventListener("click", () => {
+                addHorsePanel?.classList.toggle("open");
+            });
+
+            bindOnce(addHorsePanel, "createFormBound", "submit", async (e: Event) => {
+                const form = e.target as HTMLFormElement;
+                if (!form.matches("[data-horse-form]")) return;
+                e.preventDefault();
+
+                const formData = new FormData(form);
+                const errorEl = form.querySelector(".form-error") as HTMLElement | null;
+
+                const { error } = await actions.horse.create(formData);
+
+                if (error) {
+                    if (errorEl) {
+                        errorEl.textContent = error.message;
+                        errorEl.hidden = false;
+                    }
+                    return;
+                }
+
+                window.location.reload();
+            });
+
+            const nameInput = document.getElementById("hname") as HTMLInputElement | null;
+            const genderSelect = document.getElementById("hgender") as HTMLSelectElement | null;
+            const aliveCheckbox = document.getElementById("halive") as HTMLInputElement | null;
+            const breedSelect = document.getElementById("hbreed") as HTMLSelectElement | null;
+            const stableSelect = document.getElementById("hstable") as HTMLSelectElement | null;
+            const ownerSelect = document.getElementById("howner") as HTMLSelectElement | null;
+            const rows = document.querySelectorAll<HTMLLIElement>(".horse-row");
+
+            function applyFilters() {
+                const nameFilter = (nameInput?.value ?? "").trim().toLowerCase();
+                const genderFilter = genderSelect?.value ?? "ALL";
+                const aliveOnly = aliveCheckbox?.checked ?? false;
+                const breedFilter = breedSelect?.value ?? "ALL";
+                const stableFilter = stableSelect?.value ?? "ALL";
+                const ownerFilter = ownerSelect?.value ?? "ALL";
+
+                rows.forEach((row) => {
+                    const matchesName = !nameFilter || (row.dataset.name ?? "").includes(nameFilter);
+                    const matchesGender = genderFilter === "ALL" || row.dataset.gender === genderFilter;
+                    const matchesAlive = !aliveOnly || row.dataset.alive === "1";
+                    const matchesBreed = breedFilter === "ALL" || row.dataset.breed === breedFilter;
+                    const matchesStable = stableFilter === "ALL" || row.dataset.stable === stableFilter;
+                    const matchesOwner = ownerFilter === "ALL" || row.dataset.owner === ownerFilter;
+
+                    row.hidden = !(matchesName && matchesGender && matchesAlive && matchesBreed && matchesStable && matchesOwner);
+                });
+            }
+
+            [nameInput, genderSelect, breedSelect, stableSelect, ownerSelect].forEach((el) => {
+                el?.addEventListener("input", applyFilters);
+                el?.addEventListener("change", applyFilters);
+            });
+            aliveCheckbox?.addEventListener("change", applyFilters);
+
+            applyFilters();
+        });
+    </script>
+</BaseLayout>
+
+<style>
+    .horse-list.item-list {
+        max-height: none;
+        overflow-y: visible;
+        margin-top: 15px;
+    }
+
+    .horse-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .horse-row[hidden] {
+        display: none;
+    }
+
+    .horse-row a {
+        margin: 0;
+    }
+
+    .horse-row-main {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+        text-align: left;
+    }
+
+    .horse-name-link {
+        display: block;
+    }
+
+    .horse-parent {
+        font-size: small;
+        color: rgb(193, 193, 193);
+    }
+
+    .horse-parent a {
+        padding: 0;
+        outline: none;
+        color: rgb(152, 206, 208);
+        font-weight: normal;
+    }
+
+    .pedigree-btn {
+        margin: 0;
+        flex-shrink: 0;
+        background-color: rgb(87, 96, 87);
+        font-size: small;
+    }
+</style>

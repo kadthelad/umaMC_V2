@@ -1,0 +1,103 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro"
+import "../styles/global.css";
+import { actions } from "astro:actions";
+
+const result = Astro.getActionResult(actions.login);
+---
+
+<BaseLayout>
+	<div class="main_menu">
+		<h1>Logging in</h1>
+		<div class="login">
+			<h2>Only those allowed are able to have an account.</h2>
+            <h2>You can not register an account.</h2>
+            
+			<form id="login-form" method="POST" action={actions.login}>
+				<label for="username">Username</label>
+				<input type="text" id="username" name="username" placeholder="username" required>
+				<label for="password">Password</label>
+				<input type="password" id="password" name="password" required>
+				<button type="submit">Log in</button>
+			</form>
+
+            <p id="login-error" class="error" hidden></p>
+        </div>
+	</div>
+    <script>
+        import { actions } from "astro:actions";
+
+        document.addEventListener("astro:page-load", () => {
+            const form = document.getElementById("login-form") as HTMLFormElement | null;
+            const errorEl = document.getElementById("login-error");
+
+            form?.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const { error } = await actions.login(new FormData(form));
+
+                if (error) {
+                    if (errorEl) {
+                        errorEl.textContent = error.message;
+                        errorEl.hidden = false;
+                    }
+                    return;
+                }
+
+                window.location.href = "/";
+            });
+        });
+    </script>
+</BaseLayout>
+
+<style>
+    .login {
+        background-color: rgb(26, 26, 26);
+        padding: 20px;
+        border-radius: 5px;
+        width: fit-content;
+        margin: 0 auto;
+    }
+
+    .login h2 {
+        color: brown;
+    }
+
+    form {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+    }
+
+    form input {
+        width: 75%;
+        font-size: large;
+        background-color: rgb(71, 69, 69);
+        color: aliceblue;
+    }
+
+    button {
+        display: inline-block;
+        background-color: rgba(255, 255, 255, 0);
+        text-decoration: none;
+        border-style: none;
+        margin-top: 10px;
+        padding: 10px 20px;
+        color: aliceblue;
+        font-weight: bold;
+        font-size: large;
+        text-decoration: none;
+        outline-width: 1px;
+        outline-color: aliceblue;
+        outline-style: solid;
+        outline-offset: 5px;
+        border-radius: 2px;
+        margin-left: 10px;
+        margin-right: 10px;
+    }
+
+    .error {
+        color: rgb(168, 32, 32);
+    }
+</style>

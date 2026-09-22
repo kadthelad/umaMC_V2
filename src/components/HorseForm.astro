@@ -1,0 +1,198 @@
+---
+import Database from "better-sqlite3";
+import path from "node:path";
+import { dbFolder, getSelectedDb } from "../lib/database";
+
+interface HorseOption {
+    id: number;
+    name: string;
+    gender: number;
+}
+
+interface Props {
+    mode: "create" | "edit";
+    horse?: {
+        id: number;
+        name: string;
+        gender: number;
+        birth_date: string;
+        death_date: string;
+        notes: string;
+        speed: number;
+        jump_height: number;
+        heart_amount: number;
+        sire_id: number | null;
+        dam_id: number | null;
+        breed_id: number | null;
+        stable_id: number | null;
+        owner_id: number | null;
+    };
+    horses: HorseOption[];
+}
+
+const { mode, horse, horses } = Astro.props;
+const isEdit = mode === "edit";
+const sireParentOptions = horses.filter((h) => h.id !== horse?.id && (h.gender === 1 || h.gender === 2));
+const damParentOptions = horses.filter((h) => h.id !== horse?.id && (h.gender === 0));
+
+const selectedDb = getSelectedDb(Astro.cookies.get("selectedDb")?.value);
+const db = new Database(path.join(dbFolder, selectedDb), { readonly: true });
+
+const breed_table = db.prepare("SELECT * FROM Breed;").all() as any[];
+const stable_table = db.prepare("SELECT * FROM Stable;").all() as any[];
+const user_table = db.prepare("SELECT * FROM User;").all() as any[];
+db.close();
+
+const allBreeds = breed_table.map((t) => ({ id: t.id, name: t.name }));
+const allStables = stable_table.map((t) => ({ id: t.id, name: t.name }));
+const allUsers = user_table.map((t) => ({ id: t.id, name: t.name }));
+---
+
+<form class="horse-form" data-horse-form={mode} data-id={horse?.id}>
+    {isEdit && <input type="hidden" name="id" value={horse!.id} />}
+    <div class="field">
+        <label>Name</label>
+        <input type="text" name="name" value={horse?.name ?? ""} required>
+    </div>
+    <div class="field">
+        <label>Gender</label>
+        <select name="gender">
+            <option value="1" selected={(horse?.gender ?? 1) === 1}>Stallion ♂</option>
+            <option value="0" selected={horse?.gender === 0}>Mare ♀</option>
+            <option value="2" selected={horse?.gender === 2}>Gelding ⚲</option>
+        </select>
+    </div>
+    <div class="field">
+        <label>Birth Date</label>
+        <input type="text" name="birth_date" value={horse?.birth_date ?? "01/01/2026"} placeholder="MM/DD/YYYY" required>
+    </div>
+    <div class="field">
+        <label>Death Date</label>
+        <input type="text" name="death_date" value={horse?.death_date ?? "00/00/0000"} placeholder="00/00/0000 = alive">
+    </div>
+    <div class="field field-wide"></div>
+    <div class="field field-half">
+        <label>Notes</label>
+        <textarea name="notes">{horse?.notes ?? ""}</textarea>
+    </div>
+    <div class="field">
+        <label>Breed</label>
+        <select name="breed_id">
+            <option value="">None</option>
+            {allBreeds.map((b) => (
+                <option value={b.id} selected={horse?.breed_id === b.id}>{b.name}</option>
+            ))}
+        </select>
+    </div>
+    <div class="field">
+        <label>Stable</label>
+        <select name="stable_id">
+            <option value="">None</option>
+            {allStables.map((s) => (
+                <option value={s.id} selected={horse?.stable_id === s.id}>{s.name}</option>
+            ))}
+        </select>
+        <label>Owner</label>
+        <select name="owner_id">
+            <option value="">None</option>
+            {allUsers.map((u) => (
+                <option value={u.id} selected={horse?.owner_id === u.id}>{u.name}</option>
+            ))}
+        </select>
+    </div>
+    <div class="field field-wide"></div>
+    <div class="field">
+        <label>Speed</label>
+        <input type="number" name="speed" min="0" max="15" step="0.01" value={horse?.speed ?? 0}>
+    </div>
+    <div class="field">
+        <label>Jump Height</label>
+        <input type="number" name="jump_height" min="0" max="15" step="0.01" value={horse?.jump_height ?? 0}>
+    </div>
+    <div class="field">
+        <label>Heart Amount</label>
+        <input type="number" name="heart_amount" min="0" max="15" step="0.01" value={horse?.heart_amount ?? 0}>
+    </div>
+    <div class="field">
+        <label>Sire</label>
+        <select name="sire_id">
+            <option value="">None</option>
+            {sireParentOptions.map((h) => (
+                <option value={h.id} selected={horse?.sire_id === h.id}>{h.name}</option>
+            ))}
+        </select>
+    </div>
+    <div class="field">
+        <label>Dam</label>
+        <select name="dam_id">
+            <option value="">None</option>
+            {damParentOptions.map((h) => (
+                <option value={h.id} selected={horse?.dam_id === h.id}>{h.name}</option>
+            ))}
+        </select>
+    </div>
+    <div class="form-actions">
+        <button type="submit">{isEdit ? "Save" : "Add Horse"}</button>
+        <button type="button" class="cancel-horse-form">Cancel</button>
+    </div>
+    <p class="form-error" hidden></p>
+</form>
+
+<style>
+    .horse-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        text-align: left;
+        background-color: rgb(69, 77, 69);
+        padding: 10px;
+        border-radius: 5px;
+    }
+
+    .field {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 140px;
+    }
+
+    .field-wide {
+        flex-basis: 100%;
+    }
+
+    .field-half {
+        flex-basis: 50%;
+    }
+
+    .field label {
+        font-size: small;
+        color: rgb(152, 206, 208);
+        margin-bottom: 2px;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+        background-color: rgb(56, 73, 56);
+        border: none;
+        color: aliceblue;
+        font-size: medium;
+        padding: 4px;
+    }
+
+    .field textarea {
+        resize: vertical;
+        min-height: 60px;
+    }
+
+    .form-actions {
+        flex-basis: 100%;
+        display: flex;
+        gap: 10px;
+    }
+
+    .form-error {
+        flex-basis: 100%;
+        color: rgb(168, 32, 32);
+        margin: 0;
+    }
+</style>

@@ -1,0 +1,37 @@
+---
+interface UserOption {
+    id: number;
+    name: string;
+}
+
+interface Props {
+    mode: "create" | "edit";
+    stable?: { id: number; name: string; owner_id: number | null };
+    users: UserOption[];
+}
+
+const { mode, stable, users } = Astro.props;
+const isEdit = mode === "edit";
+---
+
+<form class="entity-form" data-entity="stable" data-mode={mode} data-id={stable?.id}>
+    {isEdit && <input type="hidden" name="id" value={stable!.id} />}
+    <div class="field">
+        <label>Name</label>
+        <input type="text" name="name" value={stable?.name ?? ""} required>
+    </div>
+    <div class="field">
+        <label>Owner</label>
+        <select name="owner_id">
+            <option value="">None</option>
+            {users.map((u) => (
+                <option value={u.id} selected={stable?.owner_id === u.id}>{u.name}</option>
+            ))}
+        </select>
+    </div>
+    <div class="form-actions">
+        <button type="submit">{isEdit ? "Save" : "Add Stable"}</button>
+        <button type="button" class="cancel-entity-form">Cancel</button>
+    </div>
+    <p class="form-error" hidden></p>
+</form>

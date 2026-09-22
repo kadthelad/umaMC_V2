@@ -1,0 +1,105 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro"
+import "../styles/pedigree.css";
+import Database from "better-sqlite3";
+import path from "node:path";
+import { dbFolder, getSelectedDb } from "../lib/database";
+import { buildPedigreeTree, layoutPedigree, calculateInbreeding, formatInbreeding, findSiblings, findOffspring, MAX_GENERATIONS } from "../lib/pedigree";
+
+const selectedDb = getSelectedDb(Astro.cookies.get("selectedDb")?.value);
+const db = new Database(path.join(dbFolder, selectedDb), { readonly: true });
+const horseRows = db.prepare("SELECT id, name, gender, sire_id, dam_id FROM Horse;").all() as any[];
+db.close();
+
+const horsesById = new Map(horseRows.map((h) => [h.id, h]));
+const genderSymbols: Record<number, string> = { 0: "♀", 1: "♂", 2: "⚲" };
+
+const idParam = Astro.url.searchParams.get("id");
+const selectedId = idParam ? Number(idParam) : null;
+const selectedHorse = selectedId != null ? horsesById.get(selectedId) : undefined;
+
+let boxes: ReturnType<typeof layoutPedigree> = [];
+let inbreeding = 0;
+let siblings: ReturnType<typeof findSiblings> = [];
+let offspring: ReturnType<typeof findOffspring> = [];
+const totalRows = 2 ** MAX_GENERATIONS;
+
+if (selectedHorse) {
+    const tree = buildPedigreeTree(selectedHorse.id, horsesById);
+    boxes = layoutPedigree(tree);
+    inbreeding = calculateInbreeding(selectedHorse, horsesById);
+    siblings = findSiblings(selectedHorse, horsesById);
+    offspring = findOffspring(selectedHorse, horsesById);
+}
+---
+
+<BaseLayout>
+    <div class="pedigree-page">
+        {selectedHorse ? (
+            <>
+                <div class="pedigree-header">
+                    <a href="/horseviewer" class="back-link">← Back to Horse Viewer</a>
+                    <h1>{selectedHorse.name}{genderSymbols[selectedHorse.gender] ?? ""}</h1>
+                    <div class="inbreeding-badge">
+                        Inbreeding rate: <strong>{formatInbreeding(inbreeding)}</strong>
+                    </div>
+                </div>
+                <div class="pedigree-chart-wrapper">
+                    <div
+                        class="pedigree-chart"
+                        style={`grid-template-columns: repeat(${MAX_GENERATIONS + 1}, minmax(150px, 1fr)); grid-template-rows: repeat(${totalRows}, minmax(26px, 1fr));`}
+                    >
+                        {boxes.map((b) => (
+                            <div
+                                class:list={["pedigree-box", `gen-${b.generation}`, { unknown: b.isUnknown }]}
+                                style={`grid-column: ${b.col}; grid-row: ${b.rowStart} / span ${b.rowSpan};`}
+                            >
+                                {b.isUnknown ? (
+                                    <span class="unknown-label">Unknown</span>
+                                ) : (
+                                    <a href={`/horse/${b.id}`}>{b.name}{genderSymbols[b.gender as number] ?? ""}</a>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                <div class="pedigree-relatives">
+                    <div class="relatives-group">
+                        <h2>Siblings</h2>
+                        {siblings.length > 0 ? (
+                            <ul class="relatives-list">
+                                {siblings.map((s) => (
+                                    <li>
+                                        <a href={`/horse/${s.horse.id}`}>{s.horse.name}{genderSymbols[s.horse.gender] ?? ""}</a>
+                                        <span class="relative-type">{s.type === "full" ? "Full sibling" : "Half sibling"}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p class="empty-state">No known siblings.</p>
+                        )}
+                    </div>
+                    <div class="relatives-group">
+                        <h2>Offspring</h2>
+                        {offspring.length > 0 ? (
+                            <ul class="relatives-list">
+                                {offspring.map((o) => (
+                                    <li>
+                                        <a href={`/horse/${o.id}`}>{o.name}{genderSymbols[o.gender] ?? ""}</a>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p class="empty-state">No known offspring.</p>
+                        )}
+                    </div>
+                </div>
+            </>
+        ) : (
+            <div class="no-selection">
+                <h1>No horse selected</h1>
+                <p>Pick a horse from the <a href="/horseviewer">Horse Viewer</a> and click its "Pedigree" button to view its pedigree.</p>
+            </div>
+        )}
+    </div>
+</BaseLayout>

@@ -1,0 +1,259 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro"
+import "../styles/world.css";
+import Database from "better-sqlite3";
+import path from "node:path";
+import { dbFolder, getSelectedDb } from "../lib/database";
+import BreedForm from "../components/BreedForm.astro";
+import UserForm from "../components/UserForm.astro";
+import StableForm from "../components/StableForm.astro";
+import RacecourseForm from "../components/RacecourseForm.astro";
+
+const { isLoggedIn } = Astro.locals;
+
+const selectedDb = getSelectedDb(Astro.cookies.get("selectedDb")?.value);
+const db = new Database(path.join(dbFolder, selectedDb), { readonly: true });
+
+const breed_table = db.prepare("SELECT * FROM Breed;").all() as any[];
+const stable_table = db.prepare("SELECT * FROM Stable;").all() as any[];
+const user_table = db.prepare("SELECT * FROM User;").all() as any[];
+const racecourse_table = db.prepare("SELECT * FROM Racecourse;").all() as any[];
+db.close();
+
+const allUsers = user_table.map((t) => ({ id: t.id, name: t.name }));
+---
+
+<BaseLayout>
+    <div class="main">
+        <div class="category-divider">
+            <div class="category">
+                <h3>Users <span class="count">{user_table.length}</span></h3>
+                {isLoggedIn && (
+                    <div class="add-entity">
+                        <button type="button" class="add-entity-toggle">+ Add User</button>
+                        <div class="add-entity-panel">
+                            <UserForm mode="create" />
+                        </div>
+                    </div>
+                )}
+                {user_table.length > 0 ? (
+                    <ul class="item-list">
+                        {user_table.map((t: any) => (
+                            <li class="item-row" data-entity="user" data-entity-id={t.id}>
+                                <div class="item-view">
+                                    <span>{t.name}</span>
+                                    {isLoggedIn && (
+                                        <div class="item-actions">
+                                            <button type="button" class="edit-entity-btn">Edit</button>
+                                            <button type="button" class="delete-entity-btn">Delete</button>
+                                        </div>
+                                    )}
+                                </div>
+                                {isLoggedIn && (
+                                    <div class="item-edit" hidden>
+                                        <UserForm mode="edit" user={{ id: t.id, name: t.name, auth_name: t.auth_name }} />
+                                    </div>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p class="empty-state">No users recorded yet.</p>
+                )}
+            </div>
+            <div class="category">
+                <h3>Breeds <span class="count">{breed_table.length}</span></h3>
+                {isLoggedIn && (
+                    <div class="add-entity">
+                        <button type="button" class="add-entity-toggle">+ Add Breed</button>
+                        <div class="add-entity-panel">
+                            <BreedForm mode="create" />
+                        </div>
+                    </div>
+                )}
+                {breed_table.length > 0 ? (
+                    <ul class="item-list">
+                        {breed_table.map((t: any) => (
+                            <li class="item-row" data-entity="breed" data-entity-id={t.id}>
+                                <div class="item-view">
+                                    <span>{t.name}</span>
+                                    {isLoggedIn && (
+                                        <div class="item-actions">
+                                            <button type="button" class="edit-entity-btn">Edit</button>
+                                            <button type="button" class="delete-entity-btn">Delete</button>
+                                        </div>
+                                    )}
+                                </div>
+                                {isLoggedIn && (
+                                    <div class="item-edit" hidden>
+                                        <BreedForm mode="edit" breed={{ id: t.id, name: t.name }} />
+                                    </div>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p class="empty-state">No breeds recorded yet.</p>
+                )}
+            </div>
+        </div>
+        <div class="category-divider">
+            <div class="category">
+                <h3>Racecourses <span class="count">{racecourse_table.length}</span></h3>
+                {isLoggedIn && (
+                    <div class="add-entity">
+                        <button type="button" class="add-entity-toggle">+ Add Racecourse</button>
+                        <div class="add-entity-panel">
+                            <RacecourseForm mode="create" users={allUsers} />
+                        </div>
+                    </div>
+                )}
+                {racecourse_table.length > 0 ? (
+                    <ul class="item-list">
+                        {racecourse_table.map((t: any) => (
+                            <li class="item-row" data-entity="racecourse" data-entity-id={t.id}>
+                                <div class="item-view">
+                                    <span>{t.name}</span>
+                                    {isLoggedIn && (
+                                        <div class="item-actions">
+                                            <button type="button" class="edit-entity-btn">Edit</button>
+                                            <button type="button" class="delete-entity-btn">Delete</button>
+                                        </div>
+                                    )}
+                                </div>
+                                {isLoggedIn && (
+                                    <div class="item-edit" hidden>
+                                        <RacecourseForm
+                                            mode="edit"
+                                            racecourse={{ id: t.id, name: t.name, coordinate_x: t.coordinate_x, coordinate_y: t.coordinate_y, owner_id: t.owner_id }}
+                                            users={allUsers}
+                                        />
+                                    </div>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p class="empty-state">No racecourses recorded yet.</p>
+                )}
+            </div>
+            <div class="category">
+                <h3>Stables <span class="count">{stable_table.length}</span></h3>
+                {isLoggedIn && (
+                    <div class="add-entity">
+                        <button type="button" class="add-entity-toggle">+ Add Stable</button>
+                        <div class="add-entity-panel">
+                            <StableForm mode="create" users={allUsers} />
+                        </div>
+                    </div>
+                )}
+                {stable_table.length > 0 ? (
+                    <ul class="item-list">
+                        {stable_table.map((t: any) => (
+                            <li class="item-row" data-entity="stable" data-entity-id={t.id}>
+                                <div class="item-view">
+                                    <span>{t.name}</span>
+                                    {isLoggedIn && (
+                                        <div class="item-actions">
+                                            <button type="button" class="edit-entity-btn">Edit</button>
+                                            <button type="button" class="delete-entity-btn">Delete</button>
+                                        </div>
+                                    )}
+                                </div>
+                                {isLoggedIn && (
+                                    <div class="item-edit" hidden>
+                                        <StableForm mode="edit" stable={{ id: t.id, name: t.name, owner_id: t.owner_id }} users={allUsers} />
+                                    </div>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p class="empty-state">No stables recorded yet.</p>
+                )}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        import { actions } from "astro:actions";
+        import { bindOnce } from "../lib/dom";
+
+        document.addEventListener("astro:page-load", () => {
+            const main = document.querySelector(".main") as HTMLElement | null;
+
+            bindOnce(main, "clickBound", "click", async (e: Event) => {
+                const target = e.target as HTMLElement;
+
+                if (target.matches(".add-entity-toggle")) {
+                    target.nextElementSibling?.classList.toggle("open");
+                    return;
+                }
+
+                if (target.matches(".edit-entity-btn")) {
+                    const row = target.closest(".item-row");
+                    row?.querySelector(".item-view")?.setAttribute("hidden", "");
+                    row?.querySelector(".item-edit")?.removeAttribute("hidden");
+                    return;
+                }
+
+                if (target.matches(".cancel-entity-form")) {
+                    const form = target.closest("form") as HTMLFormElement;
+                    form.reset();
+                    const row = target.closest(".item-row");
+                    if (row) {
+                        row.querySelector(".item-edit")?.setAttribute("hidden", "");
+                        row.querySelector(".item-view")?.removeAttribute("hidden");
+                    } else {
+                        target.closest(".add-entity-panel")?.classList.remove("open");
+                    }
+                    return;
+                }
+
+                if (target.matches(".delete-entity-btn")) {
+                    const row = target.closest(".item-row") as HTMLElement | null;
+                    const entity = row?.dataset.entity as keyof typeof actions | undefined;
+                    const id = row?.dataset.entityId;
+                    if (!entity || !id) return;
+                    if (!confirm(`Delete this ${entity}? This cannot be undone.`)) return;
+
+                    const formData = new FormData();
+                    formData.set("id", id);
+                    const { error } = await (actions[entity] as typeof actions.breed).remove(formData);
+
+                    if (error) {
+                        alert(error.message);
+                        return;
+                    }
+                    window.location.reload();
+                }
+            });
+
+            bindOnce(main, "submitBound", "submit", async (e: Event) => {
+                const form = e.target as HTMLFormElement;
+                if (!form.matches("[data-entity]")) return;
+                e.preventDefault();
+
+                const entity = form.dataset.entity as keyof typeof actions;
+                const mode = form.dataset.mode;
+                const formData = new FormData(form);
+                const errorEl = form.querySelector(".form-error") as HTMLElement | null;
+
+                const entityActions = actions[entity] as typeof actions.breed;
+                const { error } = mode === "edit"
+                    ? await entityActions.update(formData)
+                    : await entityActions.create(formData);
+
+                if (error) {
+                    if (errorEl) {
+                        errorEl.textContent = error.message;
+                        errorEl.hidden = false;
+                    }
+                    return;
+                }
+
+                window.location.reload();
+            });
+        });
+    </script>
+</BaseLayout>

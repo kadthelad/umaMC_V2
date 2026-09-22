@@ -1,0 +1,154 @@
+---
+import HorseForm from "./HorseForm.astro";
+import Database from "better-sqlite3";
+import path from "node:path";
+import { dbFolder, getSelectedDb } from "../lib/database";
+import { passthroughImageService } from "astro/config";
+
+interface Props {
+    id: number;
+    name: string;
+    gender: number;
+    birth_date: string;
+    death_date: string;
+    notes: string;
+    speed: number;
+    jump_height: number;
+    heart_amount: number;
+    sire_id: number | null;
+    dam_id: number | null;
+    breed_id: number | null;
+    stable_id: number | null;
+    owner_id: number | null;
+    allHorses: { id: number; name: string; gender: number }[];
+}
+
+const { id, name, gender, birth_date, death_date, notes,
+    speed, jump_height, heart_amount, sire_id, dam_id, 
+    breed_id, stable_id,  owner_id, allHorses
+ } = Astro.props;
+
+const { isLoggedIn } = Astro.locals;
+
+const genderSymbols: Record<number, string> = { 0: "♀", 1: "♂", 2: "⚲" }; // 2 is gelding
+const genderSymbol = genderSymbols[gender] ?? "?";
+const deathDateValue = death_date === "00/00/0000" ? "Not Dead" : death_date;
+
+const selectedDb = getSelectedDb(Astro.cookies.get("selectedDb")?.value);
+const db = new Database(path.join(dbFolder, selectedDb), { readonly: true });
+
+const breed = db.prepare("SELECT name FROM Breed WHERE id = ?").get(breed_id);
+const stable = db.prepare("SELECT name FROM Stable WHERE id = ?").get(stable_id);
+const owner = db.prepare("SELECT name FROM User WHERE id = ?").get(owner_id);
+db.close();
+---
+
+<div class="horse-card" data-horse-id={id}>
+    <section class="horse-view">
+        <div class="horse-main">
+            <h2>{ name }{genderSymbol}</h2>
+            <div class="category">
+                Birth Date: { birth_date } <br>
+                Death Date: { deathDateValue }
+            </div>
+            <textarea readonly>{ notes }</textarea>
+            <div class="category">
+                Base Speed : { speed } <br>
+                Base Jump Height : { jump_height } <br>
+                Base Heart Amount : { heart_amount }
+            </div>
+            <div class="category">
+                Breed : { breed?.name ?? "Undefined Breed" } <br>
+                Stable : { stable?.name ?? "No Stable" } <br>
+                Owner : { owner?.name ?? "No Owner" }
+            </div>
+        </div>
+        {isLoggedIn && (
+            <div class="horse-actions">
+                <button type="button" class="edit-horse-btn">Edit</button>
+                <button type="button" class="delete-horse-btn">Delete</button>
+            </div>
+        )}
+    </section>
+
+    {isLoggedIn && (
+        <div class="horse-edit" hidden>
+            <HorseForm
+                mode="edit"
+                horse={{ id, name, gender, 
+                    birth_date, death_date, 
+                    notes, speed, jump_height, 
+                    heart_amount, sire_id, dam_id,
+                    breed_id, stable_id, owner_id }}
+                horses={allHorses}
+            />
+        </div>
+    )}
+</div>
+
+<style>
+    .horse-card {
+        margin: 8px;
+    }
+
+    section {
+        background-color: rgb(56, 73, 56);
+        border-radius: 5px;
+        padding: 5px;
+
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        text-align: left;
+
+        color: aliceblue;
+    }
+
+    .horse-main {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+    }
+
+    div {
+        margin: 10px;
+    }
+
+    textarea {
+        resize: none;
+        background-color: rgb(69, 77, 69);
+        border-width: 0px;
+        color: aliceblue;
+        height: 100px;
+    }
+
+    .horse-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        margin-right: 15px;
+    }
+
+    .horse-actions button {
+        background-color: rgb(69, 77, 69);
+        border: none;
+        color: aliceblue;
+        padding: 5px 10px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: small;
+    }
+
+    .horse-actions button:hover {
+        background-color: rgb(87, 96, 87);
+    }
+
+    .delete-horse-btn {
+        color: rgb(224, 128, 128);
+    }
+
+    .horse-edit {
+        margin-top: 5px;
+    }
+</style>

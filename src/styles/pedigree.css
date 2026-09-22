@@ -1,0 +1,149 @@
+.pedigree-page {
+    margin: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.pedigree-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.pedigree-header h1 {
+    margin: 0;
+}
+
+.inbreeding-badge {
+    background-color: rgb(56, 73, 56);
+    color: aliceblue;
+    padding: 8px 14px;
+    border-radius: 5px;
+    font-size: medium;
+}
+
+.inbreeding-badge strong {
+    color: rgb(152, 206, 208);
+}
+
+.pedigree-chart-wrapper {
+    overflow-x: auto;
+    padding-bottom: 10px;
+}
+
+.pedigree-chart {
+    display: grid;
+    gap: 4px;
+    min-width: 900px;
+}
+
+.pedigree-box {
+    background-color: rgb(56, 73, 56);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2px 6px;
+    overflow: hidden;
+}
+
+.pedigree-box a {
+    color: aliceblue;
+    font-weight: normal;
+    font-size: small;
+    padding: 2px 4px;
+    margin: 0;
+    outline: none;
+    white-space: normal;
+    word-break: break-word;
+    border-radius: 3px;
+}
+
+.pedigree-box a:hover {
+    background-color: rgb(87, 96, 87);
+}
+
+.pedigree-box.unknown {
+    background-color: rgb(45, 45, 45);
+}
+
+.unknown-label {
+    color: rgb(120, 120, 120);
+    font-size: small;
+    font-style: italic;
+}
+
+.pedigree-box.gen-0 {
+    font-size: large;
+}
+
+.pedigree-relatives {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.relatives-group {
+    background-color: rgb(56, 73, 56);
+    flex: 1 1 300px;
+    padding: 15px 20px;
+    border-radius: 5px;
+    color: aliceblue;
+}
+
+.relatives-group h2 {
+    color: rgb(152, 206, 208);
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 12px;
+    font-size: large;
+}
+
+.relatives-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.relatives-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background-color: rgb(69, 77, 69);
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    border-radius: 3px;
+}
+
+.relatives-list li:last-child {
+    margin-bottom: 0;
+}
+
+.relatives-list a {
+    padding: 0;
+    margin: 0;
+    outline: none;
+    color: aliceblue;
+    font-weight: normal;
+}
+
+.relative-type {
+    font-size: small;
+    color: rgb(152, 152, 152);
+    flex-shrink: 0;
+}
+
+.no-selection {
+    text-align: center;
+    padding: 40px 0;
+}
+
+.no-selection a {
+    color: rgb(152, 206, 208);
+    padding: 0;
+    outline: none;
+}

@@ -1,0 +1,122 @@
+.breeding-page {
+    margin: 20px auto;
+    max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+}
+
+.breeding-form {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    background-color: rgb(56, 73, 56);
+    padding: 15px;
+    border-radius: 5px;
+}
+
+.breeding-form .field {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    flex: 1 1 180px;
+}
+
+.breeding-form .field label {
+    font-size: small;
+    color: rgb(152, 206, 208);
+    margin-bottom: 2px;
+}
+
+.breeding-form select {
+    background-color: rgb(69, 77, 69);
+    border: none;
+    color: aliceblue;
+    padding: 6px;
+    font-size: medium;
+}
+
+.breeding-form button {
+    background-color: rgb(69, 77, 69);
+    border: none;
+    color: aliceblue;
+    padding: 8px 16px;
+    border-radius: 3px;
+    cursor: pointer;
+    align-self: flex-end;
+}
+
+.breeding-form button:hover {
+    background-color: rgb(87, 96, 87);
+}
+
+.breeding-result {
+    background-color: rgb(56, 73, 56);
+    border-radius: 5px;
+    padding: 15px;
+    color: aliceblue;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+}
+
+.breeding-pair {
+    font-size: large;
+}
+
+.inbreeding-badge {
+    background-color: rgb(69, 77, 69);
+    color: aliceblue;
+    padding: 8px 14px;
+    border-radius: 5px;
+    font-size: medium;
+}
+
+.inbreeding-badge strong {
+    color: rgb(152, 206, 208);
+}
+
+.relationship-note {
+    margin: 0;
+    color: rgb(224, 168, 128);
+    font-size: small;
+}
+
+.register-foal {
+    width: 100%;
+}
+
+#register-foal-button {
+    appearance: none;
+    -webkit-appearance: none;
+    background-color: rgb(69, 77, 69);
+    color: rgb(152, 206, 208);
+    font-weight: bold;
+    border: none;
+    width: 100%;
+    padding: 8px;
+    border-radius: 5px;
+    font-size: medium;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#register-foal-button:hover {
+    background-color: rgb(87, 96, 87);
+}
+
+#register-foal-panel {
+    max-height: 0;
+    overflow: hidden;
+    box-sizing: border-box;
+    text-align: left;
+    transition: max-height 0.3s ease;
+}
+
+#register-foal-panel.open {
+    max-height: 600px;
+    padding-top: 10px;
+}

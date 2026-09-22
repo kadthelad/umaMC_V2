@@ -1,0 +1,137 @@
+@keyframes bounce {
+	0% {
+		transform: scale(1);
+	}
+	50% {
+		transform: scale(0.9);
+	}
+	100% {
+		transform: scale(1);
+	}
+}
+
+html {
+	height: 100%;
+    width: 100%;
+    font-family: var(--FontAsap), sans-serif;
+    background-color: rgb(39, 39, 39);
+    color: rgb(193, 193, 193);
+    font-size: larger;
+	margin: 0;
+	padding: 0;
+}
+
+body {
+    font-family: var(--FontAsap), sans-serif;
+    background-color: rgb(39, 39, 39);
+    color: rgb(193, 193, 193);
+    font-size: larger;
+	margin: 0;
+	padding: 0;
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+}
+
+main {
+	flex: 1;
+}
+
+header,footer {
+    position: relative;
+    background-image: linear-gradient(to right, rgb(56, 73, 56), rgb(69, 77, 69));
+    padding: 20px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: row;
+	justify-content: center;
+    align-items: center;
+    border-width: 0px;
+    border-bottom-width: 3px;
+    border-style: solid;
+    border-bottom-color: rgb(87, 96, 87);
+}
+
+footer {
+	background-image: linear-gradient(to right, rgb(56, 73, 56), rgb(69, 77, 69));
+	padding: 20px;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	border-top: 3px solid rgb(87, 96, 87);
+    border-bottom-color: rgb(56, 73, 56);
+}
+
+footer h3 {
+	position: absolute;
+	left: 20px;
+	font-size: small;
+	margin: 0;
+}
+
+header img {
+    height: 100px;
+    width: 100px;
+}
+
+h1 {
+    color: aliceblue;
+    font-size: 50px;
+}
+
+select {
+    background-color: rgb(87, 96, 87);
+    border: none;
+    outline-width: 0px;
+    color: aliceblue;
+}
+
+.clickable_image {
+	display: block;
+    padding: 0px;
+    outline-width: 0px;
+}
+
+a {
+	display: inline-block;
+	padding: 10px 20px;
+    color: aliceblue;
+    font-weight: bold;
+    text-decoration: none;
+    outline-width: 1px;
+    outline-color: aliceblue;
+    outline-style: solid;
+    outline-offset: 5px;
+    border-radius: 2px;
+    margin-left: 10px;
+    margin-right: 10px;
+
+	transition: background-color 0.2s ease;
+	transition: transform 0.2s;
+}
+
+nav a {
+    outline-offset: 1px;
+    border-radius: 2px;
+    margin-left: 5px;
+    margin-right: 5px;
+    font-size: small;
+}
+
+a:hover {
+	background-color: rgb(87, 96, 87);
+}
+
+a:active {
+	animation: bounce 0.2s ease;
+}
+
+
+.main_menu {
+    height: 750px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    justify-items: center;
+    text-align: center;
+}

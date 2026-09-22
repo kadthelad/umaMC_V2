@@ -1,0 +1,122 @@
+.database {
+    margin-left: 20px;
+    margin-right: 20px;
+    margin-top: 5px;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    font-size: larger;
+}
+
+.filter-select {
+    font-size: large;
+}
+
+input {
+    background-color: rgb(56, 73, 56);
+    border: none;
+    font-size: large;
+    color: aliceblue;
+    margin-left: 5px;
+}
+
+input:focus {
+    background-color: rgb(56, 73, 56);
+    border: none;
+    outline-width: 1px;
+    outline-color: rgba(240, 248, 255, 0.122);
+    outline-style: solid;
+    outline-offset: 5px;
+}
+
+.filter_divider {
+    display: flex;
+    flex-direction: column;
+}
+
+#filter_menu {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    text-align: left;
+
+    max-height: 0;
+    overflow: hidden;
+    box-sizing: border-box;
+    background-color: rgb(56, 73, 56);
+    border-top-right-radius: 0px;
+    border-top-left-radius: 0px;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+
+    transition: max-height 0.3s ease;
+}
+
+#filter_menu.open {
+    max-height: 250px;
+    padding: 10px;
+}
+
+#filter_button {
+	appearance: none;
+	-webkit-appearance: none;
+    background-color: rgb(56, 73, 56);
+    color: rgb(152, 206, 208);
+    font-weight: bold;
+    border: none;
+    height: 50px;
+    width: 100%;
+    border-radius: 5px;
+    font-size: larger;
+    cursor: pointer;
+    border-top-right-radius: 5px;
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 0px;
+
+    transition: background-color 0.5s ease;
+}
+
+#filter_button:hover {
+    background-color: rgb(69, 77, 69);
+}
+
+.add-horse {
+    margin-top: 10px;
+}
+
+#add_horse_panel {
+    max-height: 0;
+    overflow: hidden;
+    box-sizing: border-box;
+    background-color: rgb(56, 73, 56);
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+
+    transition: max-height 0.3s ease;
+}
+
+#add_horse_panel.open {
+    max-height: 500px;
+    padding: 10px;
+}
+
+#add_horse_button {
+    appearance: none;
+    -webkit-appearance: none;
+    background-color: rgb(56, 73, 56);
+    color: rgb(152, 206, 208);
+    font-weight: bold;
+    border: none;
+    height: 50px;
+    width: 100%;
+    border-radius: 5px;
+    font-size: larger;
+    cursor: pointer;
+
+    transition: background-color 0.5s ease;
+}
+
+#add_horse_button:hover {
+    background-color: rgb(69, 77, 69);
+}

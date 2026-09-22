@@ -1,0 +1,22 @@
+---
+interface Props {
+    mode: "create" | "edit";
+    breed?: { id: number; name: string };
+}
+
+const { mode, breed } = Astro.props;
+const isEdit = mode === "edit";
+---
+
+<form class="entity-form" data-entity="breed" data-mode={mode} data-id={breed?.id}>
+    {isEdit && <input type="hidden" name="id" value={breed!.id} />}
+    <div class="field">
+        <label>Name</label>
+        <input type="text" name="name" value={breed?.name ?? ""} required>
+    </div>
+    <div class="form-actions">
+        <button type="submit">{isEdit ? "Save" : "Add Breed"}</button>
+        <button type="button" class="cancel-entity-form">Cancel</button>
+    </div>
+    <p class="form-error" hidden></p>
+</form>

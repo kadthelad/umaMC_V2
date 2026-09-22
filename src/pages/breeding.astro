@@ -1,0 +1,122 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro"
+import "../styles/breeding.css";
+import HorseForm from "../components/HorseForm.astro";
+import Database from "better-sqlite3";
+import path from "node:path";
+import { dbFolder, getSelectedDb } from "../lib/database";
+import { calculateInbreeding, formatInbreeding, describeRelationship } from "../lib/pedigree";
+
+const { isLoggedIn } = Astro.locals;
+
+const selectedDb = getSelectedDb(Astro.cookies.get("selectedDb")?.value);
+const db = new Database(path.join(dbFolder, selectedDb), { readonly: true });
+const horse_table = db.prepare("SELECT * FROM Horse;").all() as any[];
+db.close();
+
+const isAlive = (h: any) => h.death_date === "00/00/0000";
+const horsesById = new Map(horse_table.map((h) => [h.id, h]));
+const mareOptions = horse_table.filter((h) => h.gender === 0 && isAlive(h));
+const stallionOptions = horse_table.filter((h) => h.gender === 1 && isAlive(h));
+const allHorses = horse_table.map((t) => ({ id: t.id, name: t.name, gender: t.gender }));
+
+const mareId = Number(Astro.url.searchParams.get("mare"));
+const stallionId = Number(Astro.url.searchParams.get("stallion"));
+const mare = horsesById.get(mareId);
+const stallion = horsesById.get(stallionId);
+
+const inbreeding = mare && stallion
+    ? calculateInbreeding({ sire_id: stallion.id, dam_id: mare.id }, horsesById)
+    : null;
+
+const relationship = inbreeding && inbreeding > 0
+    ? describeRelationship(stallion, mare, horsesById)
+    : null;
+---
+
+<BaseLayout>
+    <div class="breeding-page">
+        <h1>Breeding</h1>
+        <form method="GET" class="breeding-form">
+            <div class="field">
+                <label for="mare">Mare</label>
+                <select id="mare" name="mare">
+                    <option value="">-- Select Mare --</option>
+                    {mareOptions.map((m: any) => (
+                        <option value={m.id} selected={m.id === mareId}>{m.name}</option>
+                    ))}
+                </select>
+            </div>
+            <div class="field">
+                <label for="stallion">Stallion</label>
+                <select id="stallion" name="stallion">
+                    <option value="">-- Select Stallion --</option>
+                    {stallionOptions.map((s: any) => (
+                        <option value={s.id} selected={s.id === stallionId}>{s.name}</option>
+                    ))}
+                </select>
+            </div>
+            <button type="submit">Check Inbreeding Rate</button>
+        </form>
+
+        {mare && stallion && (
+            <div class="breeding-result">
+                <p class="breeding-pair">{stallion.name} × {mare.name}</p>
+                <div class="inbreeding-badge">
+                    Inbreeding rate: <strong>{formatInbreeding(inbreeding!)}</strong>
+                </div>
+                {relationship && (
+                    <p class="relationship-note">{relationship}</p>
+                )}
+
+                {isLoggedIn && (
+                    <div class="register-foal">
+                        <button type="button" id="register-foal-button">+ Register Foal</button>
+                        <div id="register-foal-panel">
+                            <HorseForm
+                                mode="create"
+                                horse={({ sire_id: stallion.id, dam_id: mare.id } as any)}
+                                horses={allHorses}
+                            />
+                        </div>
+                    </div>
+                )}
+            </div>
+        )}
+    </div>
+
+    <script>
+        import { actions } from "astro:actions";
+        import { bindOnce } from "../lib/dom";
+
+        document.addEventListener("astro:page-load", () => {
+            const toggleButton = document.getElementById("register-foal-button");
+            const panel = document.getElementById("register-foal-panel");
+
+            toggleButton?.addEventListener("click", () => {
+                panel?.classList.toggle("open");
+            });
+
+            bindOnce(panel, "createFormBound", "submit", async (e: Event) => {
+                const form = e.target as HTMLFormElement;
+                if (!form.matches("[data-horse-form]")) return;
+                e.preventDefault();
+
+                const formData = new FormData(form);
+                const errorEl = form.querySelector(".form-error") as HTMLElement | null;
+
+                const { error } = await actions.horse.create(formData);
+
+                if (error) {
+                    if (errorEl) {
+                        errorEl.textContent = error.message;
+                        errorEl.hidden = false;
+                    }
+                    return;
+                }
+
+                window.location.href = "/horseviewer";
+            });
+        });
+    </script>
+</BaseLayout>

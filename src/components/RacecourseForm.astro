@@ -1,0 +1,45 @@
+---
+interface UserOption {
+    id: number;
+    name: string;
+}
+
+interface Props {
+    mode: "create" | "edit";
+    racecourse?: { id: number; name: string; coordinate_x: number | null; coordinate_y: number | null; owner_id: number };
+    users: UserOption[];
+}
+
+const { mode, racecourse, users } = Astro.props;
+const isEdit = mode === "edit";
+---
+
+<form class="entity-form" data-entity="racecourse" data-mode={mode} data-id={racecourse?.id}>
+    {isEdit && <input type="hidden" name="id" value={racecourse!.id} />}
+    <div class="field">
+        <label>Name</label>
+        <input type="text" name="name" value={racecourse?.name ?? ""} required>
+    </div>
+    <div class="field">
+        <label>Coordinate X</label>
+        <input type="number" name="coordinate_x" value={racecourse?.coordinate_x ?? ""} step="1">
+    </div>
+    <div class="field">
+        <label>Coordinate Y</label>
+        <input type="number" name="coordinate_y" value={racecourse?.coordinate_y ?? ""} step="1">
+    </div>
+    <div class="field">
+        <!-- Racecourse.owner_id is NOT NULL in the schema, so unlike Stable's owner this has no blank option. -->
+        <label>Owner</label>
+        <select name="owner_id" required>
+            {users.map((u) => (
+                <option value={u.id} selected={racecourse?.owner_id === u.id}>{u.name}</option>
+            ))}
+        </select>
+    </div>
+    <div class="form-actions">
+        <button type="submit">{isEdit ? "Save" : "Add Racecourse"}</button>
+        <button type="button" class="cancel-entity-form">Cancel</button>
+    </div>
+    <p class="form-error" hidden></p>
+</form>

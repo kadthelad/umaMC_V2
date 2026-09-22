@@ -1,0 +1,26 @@
+---
+interface Props {
+    mode: "create" | "edit";
+    user?: { id: number; name: string; auth_name: string | null };
+}
+
+const { mode, user } = Astro.props;
+const isEdit = mode === "edit";
+---
+
+<form class="entity-form" data-entity="user" data-mode={mode} data-id={user?.id}>
+    {isEdit && <input type="hidden" name="id" value={user!.id} />}
+    <div class="field">
+        <label>Name</label>
+        <input type="text" name="name" value={user?.name ?? ""} required>
+    </div>
+    <div class="field">
+        <label>Auth Name</label>
+        <input type="text" name="auth_name" value={user?.auth_name ?? ""} placeholder="optional">
+    </div>
+    <div class="form-actions">
+        <button type="submit">{isEdit ? "Save" : "Add User"}</button>
+        <button type="button" class="cancel-entity-form">Cancel</button>
+    </div>
+    <p class="form-error" hidden></p>
+</form>
