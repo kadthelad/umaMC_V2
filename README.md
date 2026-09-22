@@ -1,46 +1,11 @@
-# Astro Starter Kit: Basics
+## Projet en cours de développement
 
-```sh
-npm create astro@latest -- --template basics
-```
+Ce projet est réalisé avec Astro, en utilisant HTML/CSS/JS.
+Ce site web est une version améliorée de [UmaMC V1](https://github.com/kadthelad/umaMC_V1).
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+Le site web est seulement accessible avec une connection IPv6 (limitations à cause de mon routeur) sur [UmaMC](https://umamc.duckdns.org/).
+-# Attention, le site est très souvent en maintenance, vous n'y aurez probablement pas accès.
 
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
-
-```text
-/
-├── public/
-│   └── favicon.svg
-├── src
-│   ├── assets
-│   │   └── astro.svg
-│   ├── components
-│   │   └── Welcome.astro
-│   ├── layouts
-│   │   └── Layout.astro
-│   └── pages
-│       └── index.astro
-└── package.json
-```
-
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+### Fonctionnalités:
+- Insertion/Modfication/Suppression de données dans la base
+- Visualisation des données
